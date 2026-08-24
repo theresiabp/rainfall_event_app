@@ -12,13 +12,14 @@ import streamlit as st
 
 st.set_page_config(
     page_title="South Florida Rainfall Event Viewer",
+    page_icon="🌧️",
     layout="wide"
 )
 
-st.title("South Florida Rainfall Event Viewer")
+st.title("🌧️ South Florida Rainfall Event Viewer")
 
 st.caption(
-    "Explore NOAA GHCN-Daily rainfall observations and identify "
+    "Explore daily GHCN rainfall observations and identify "
     "spatially widespread heavy-rainfall events."
 )
 
@@ -53,7 +54,9 @@ if not DATA_FILE.exists():
 @st.cache_data
 def load_data():
 
-    df = pd.read_parquet(DATA_FILE)
+    df = pd.read_parquet(
+        DATA_FILE
+    )
 
     df["date"] = pd.to_datetime(
         df["date"]
@@ -69,7 +72,9 @@ rain = load_data()
 # BASIC DATA INFORMATION
 # ============================================================
 
-st.sidebar.header("Event search")
+st.sidebar.header(
+    "Event search"
+)
 
 st.sidebar.caption(
     f"Data period: "
@@ -114,12 +119,10 @@ month_names = {
     12: "December"
 }
 
-
 year_data = rain[
     rain["date"].dt.year
     == selected_year
 ].copy()
-
 
 available_months = sorted(
     year_data["date"]
@@ -127,13 +130,11 @@ available_months = sorted(
     .unique()
 )
 
-
 default_month_index = (
     available_months.index(6)
     if 6 in available_months
     else 0
 )
-
 
 selected_month = st.sidebar.selectbox(
     "Month",
@@ -154,16 +155,41 @@ month_data = year_data[
 
 
 # ============================================================
-# RAINFALL THRESHOLD SLIDER
+# UNIT SELECTOR
 # ============================================================
 
-threshold = st.sidebar.slider(
-    "Rainfall threshold (mm/day)",
-    min_value=0,
-    max_value=250,
-    value=50,
-    step=5
+unit = st.sidebar.radio(
+    "Rainfall units",
+    ["mm", "inches"],
+    horizontal=True
 )
+
+
+if unit == "mm":
+
+    rainfall_column = "prcp_mm"
+    unit_label = "mm"
+
+    threshold_display = st.sidebar.slider(
+        "Rainfall threshold (mm/day)",
+        min_value=0.0,
+        max_value=250.0,
+        value=50.0,
+        step=5.0
+    )
+
+else:
+
+    rainfall_column = "prcp_in"
+    unit_label = "in"
+
+    threshold_display = st.sidebar.slider(
+        "Rainfall threshold (in/day)",
+        min_value=0.0,
+        max_value=10.0,
+        value=2.0,
+        step=0.1
+    )
 
 
 # ============================================================
@@ -175,7 +201,6 @@ available_dates = sorted(
     .dt.date
     .unique()
 )
-
 
 if len(available_dates) == 0:
 
@@ -191,11 +216,21 @@ if len(available_dates) == 0:
 # DATE SLIDER
 # ============================================================
 
+st.subheader(
+    "Explore the event"
+)
+
 selected_date = st.slider(
     "Date",
-    min_value=min(available_dates),
-    max_value=max(available_dates),
-    value=min(available_dates),
+    min_value=min(
+        available_dates
+    ),
+    max_value=max(
+        available_dates
+    ),
+    value=min(
+        available_dates
+    ),
     format="MMM DD, YYYY"
 )
 
@@ -208,7 +243,6 @@ day = month_data[
     month_data["date"].dt.date
     == selected_date
 ].copy()
-
 
 if day.empty:
 
@@ -225,40 +259,14 @@ if day.empty:
 # ============================================================
 
 day["exceed"] = (
-    day["prcp_mm"]
-    >= threshold
+    day[rainfall_column]
+    >= threshold_display
 )
-
 
 day["status"] = np.where(
     day["exceed"],
-    f"≥ {threshold} mm",
-    f"< {threshold} mm"
-)
-
-
-# ============================================================
-# MAP MARKER SIZE
-# ============================================================
-
-# Add a small baseline so zero-rain stations
-# are still visible.
-
-day["marker_size"] = (
-    5
-    +
-    2 * np.sqrt(
-        day["prcp_mm"]
-        .clip(lower=0)
-    )
-)
-
-day["marker_size"] = (
-    day["marker_size"]
-    .clip(
-        lower=5,
-        upper=35
-    )
+    f"≥ {threshold_display:g} {unit_label}",
+    f"< {threshold_display:g} {unit_label}"
 )
 
 
@@ -285,12 +293,12 @@ fraction = (
 )
 
 max_rain = (
-    day["prcp_mm"]
+    day[rainfall_column]
     .max()
 )
 
 mean_rain = (
-    day["prcp_mm"]
+    day[rainfall_column]
     .mean()
 )
 
@@ -307,7 +315,9 @@ c1.metric(
 )
 
 c2.metric(
-    f"Stations ≥ {threshold} mm",
+    f"Stations ≥ "
+    f"{threshold_display:g} "
+    f"{unit_label}",
     n_exceeding
 )
 
@@ -318,12 +328,14 @@ c3.metric(
 
 c4.metric(
     "Maximum rainfall",
-    f"{max_rain:.1f} mm"
+    f"{max_rain:.2f} "
+    f"{unit_label}"
 )
 
 c5.metric(
     "Mean rainfall",
-    f"{mean_rain:.1f} mm"
+    f"{mean_rain:.2f} "
+    f"{unit_label}"
 )
 
 
@@ -337,7 +349,6 @@ st.subheader(
     )
 )
 
-
 fig = px.scatter_map(
     day,
 
@@ -347,15 +358,18 @@ fig = px.scatter_map(
     color="status",
 
     color_discrete_map={
-        f"< {threshold} mm": "#9E9E9E",
-        f"≥ {threshold} mm": "#D62728"
+        f"< {threshold_display:g} {unit_label}":
+            "#9E9E9E",
+
+        f"≥ {threshold_display:g} {unit_label}":
+            "#D62728"
     },
 
     hover_name="name",
 
     hover_data={
         "station": True,
-        "prcp_mm": ":.1f",
+        rainfall_column: ":.2f",
         "lat": ":.3f",
         "lon": ":.3f",
         "status": False
@@ -370,8 +384,8 @@ fig = px.scatter_map(
 
     category_orders={
         "status": [
-            f"< {threshold} mm",
-            f"≥ {threshold} mm"
+            f"< {threshold_display:g} {unit_label}",
+            f"≥ {threshold_display:g} {unit_label}"
         ]
     }
 )
@@ -386,24 +400,9 @@ fig.update_traces(
 
 
 fig.update_layout(
-    map_style="carto-positron",
+    map_style="open-street-map",
 
-    map=dict(
-        center=dict(
-            lat=26.2,
-            lon=-80.9
-        ),
-
-        zoom=6,         
-        bounds=dict(
-            west=-90,
-            east=-70,
-            south=24,
-            north=29
-        )
-    ),
-
-    height=600,
+    height=700,
 
     margin=dict(
         l=0,
@@ -412,8 +411,11 @@ fig.update_layout(
         b=0
     ),
 
-    legend_title_text="Daily rainfall"
+    legend_title_text=(
+        "Daily rainfall"
+    )
 )
+
 
 st.plotly_chart(
     fig,
@@ -425,7 +427,11 @@ st.plotly_chart(
 # DAILY EVENT RANKING
 # ============================================================
 
-st.markdown("<br>", unsafe_allow_html=True)
+st.markdown(
+    "<br>",
+    unsafe_allow_html=True
+)
+
 st.divider()
 
 st.markdown(
@@ -434,12 +440,16 @@ st.markdown(
     f"{selected_year}"
 )
 
-summary_data = month_data.copy()
+
+summary_data = (
+    month_data.copy()
+)
 
 summary_data["exceed"] = (
-    summary_data["prcp_mm"]
-    >= threshold
+    summary_data[rainfall_column]
+    >= threshold_display
 )
+
 
 daily_summary = (
     summary_data
@@ -449,79 +459,130 @@ daily_summary = (
             "station",
             "nunique"
         ),
+
         stations_exceeding=(
             "exceed",
             "sum"
         ),
-        maximum_rainfall_mm=(
-            "prcp_mm",
+
+        maximum_rainfall=(
+            rainfall_column,
             "max"
         ),
-        mean_rainfall_mm=(
-            "prcp_mm",
+
+        mean_rainfall=(
+            rainfall_column,
             "mean"
         )
     )
     .reset_index()
 )
 
-daily_summary["fraction_exceeding"] = (
-    daily_summary["stations_exceeding"]
+
+daily_summary[
+    "fraction_exceeding"
+] = (
+    daily_summary[
+        "stations_exceeding"
+    ]
     /
-    daily_summary["reporting_stations"]
+    daily_summary[
+        "reporting_stations"
+    ]
     * 100
 )
+
 
 daily_summary = (
     daily_summary
     .sort_values(
         [
             "stations_exceeding",
-            "maximum_rainfall_mm"
+            "maximum_rainfall"
         ],
         ascending=False
     )
-    .reset_index(drop=True)
+    .reset_index(
+        drop=True
+    )
 )
 
-daily_summary["maximum_rainfall_mm"] = (
-    daily_summary["maximum_rainfall_mm"]
+
+daily_summary[
+    "maximum_rainfall"
+] = (
+    daily_summary[
+        "maximum_rainfall"
+    ]
+    .round(2)
+)
+
+
+daily_summary[
+    "mean_rainfall"
+] = (
+    daily_summary[
+        "mean_rainfall"
+    ]
+    .round(2)
+)
+
+
+daily_summary[
+    "fraction_exceeding"
+] = (
+    daily_summary[
+        "fraction_exceeding"
+    ]
     .round(1)
 )
 
-daily_summary["mean_rainfall_mm"] = (
-    daily_summary["mean_rainfall_mm"]
-    .round(1)
-)
-
-daily_summary["fraction_exceeding"] = (
-    daily_summary["fraction_exceeding"]
-    .round(1)
-)
 
 daily_summary = (
     daily_summary.rename(
         columns={
-            "date": "Date",
-            "reporting_stations": "Reporting stations",
-            "stations_exceeding": f"Stations ≥ {threshold} mm",
-            "fraction_exceeding": "% exceeding",
-            "maximum_rainfall_mm": "Maximum rainfall (mm)",
-            "mean_rainfall_mm": "Mean rainfall (mm)"
+            "date":
+                "Date",
+
+            "reporting_stations":
+                "Reporting stations",
+
+            "stations_exceeding":
+                f"Stations ≥ "
+                f"{threshold_display:g} "
+                f"{unit_label}",
+
+            "fraction_exceeding":
+                "% exceeding",
+
+            "maximum_rainfall":
+                f"Maximum rainfall "
+                f"({unit_label})",
+
+            "mean_rainfall":
+                f"Mean rainfall "
+                f"({unit_label})"
         }
     )
 )
 
-# format date nicely
-daily_summary["Date"] = pd.to_datetime(
-    daily_summary["Date"]
-).dt.strftime("%Y-%m-%d")
+
+daily_summary["Date"] = (
+    pd.to_datetime(
+        daily_summary["Date"]
+    )
+    .dt.strftime(
+        "%Y-%m-%d"
+    )
+)
+
 
 st.dataframe(
     daily_summary,
     use_container_width=True,
     hide_index=True
 )
+
 
 # ============================================================
 # CURRENT-DAY STATION TABLE
@@ -536,14 +597,14 @@ with st.expander(
             [
                 "station",
                 "name",
-                "prcp_mm",
+                rainfall_column,
                 "lat",
                 "lon",
                 "exceed"
             ]
         ]
         .sort_values(
-            "prcp_mm",
+            rainfall_column,
             ascending=False
         )
     )
@@ -558,8 +619,8 @@ with st.expander(
                 "name":
                     "Station",
 
-                "prcp_mm":
-                    "Rainfall (mm)",
+                rainfall_column:
+                    f"Rainfall ({unit_label})",
 
                 "lat":
                     "Latitude",
