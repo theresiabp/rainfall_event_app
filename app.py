@@ -439,7 +439,7 @@ fig = px.scatter_map(
         "lon": -80.9
     },
 
-    zoom=8,
+    zoom=7,
 
     category_orders={
         "status": [
