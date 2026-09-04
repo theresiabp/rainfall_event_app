@@ -516,7 +516,7 @@ with enso_col:
             else "gray"
         )
 
-        st.markdown(
+        st.html(
             f"""
             <div style="margin-bottom: 18px;">
                 <div style="
