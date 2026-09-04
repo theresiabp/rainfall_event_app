@@ -19,7 +19,7 @@ st.set_page_config(
 st.title("🌧️ South Florida Rainfall Event Viewer")
 
 st.caption(
-    "Explore daily GHCN rainfall observations and identify "
+    "Explore NOAA GHCN-Daily rainfall observations and identify "
     "spatially widespread heavy-rainfall events."
 )
 
@@ -439,7 +439,7 @@ fig = px.scatter_map(
         "lon": -80.9
     },
 
-    zoom=7,
+    zoom=6.5,
 
     category_orders={
         "status": [
