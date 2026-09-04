@@ -480,7 +480,7 @@ fig.update_layout(
         yanchor="bottom",
 
         bgcolor="rgba(255,255,255,0.8)"
-    )
+    ),
 
     uirevision="keep-map-position"
 )
