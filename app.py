@@ -25,7 +25,7 @@ st.caption(
 
 
 # ============================================================
-# DATA FILE
+# DATA FILES
 # ============================================================
 
 DATA_FILE = Path(
@@ -35,6 +35,7 @@ DATA_FILE = Path(
 ENSO_FILE = Path(
     "data/processed/nino34_daily.parquet"
 )
+
 
 # ============================================================
 # CHECK THAT DATA EXISTS
@@ -48,6 +49,7 @@ if not DATA_FILE.exists():
     )
 
     st.stop()
+
 
 if not ENSO_FILE.exists():
 
@@ -280,6 +282,7 @@ if day.empty:
 
     st.stop()
 
+
 # ============================================================
 # GET NINO 3.4 SST DATA FOR SELECTED DATE
 # ============================================================
@@ -473,11 +476,6 @@ fig.update_layout(
 )
 
 
-st.plotly_chart(
-    fig,
-    use_container_width=True
-)
-
 # ============================================================
 # MAP + ENSO CARD
 # ============================================================
@@ -524,7 +522,6 @@ with enso_col:
             "Niño 3.4 SST data are unavailable "
             "for this date."
         )
-
 
 
 # ============================================================
