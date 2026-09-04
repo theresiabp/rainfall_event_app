@@ -435,7 +435,7 @@ fig = px.scatter_map(
     },
 
     center={
-        "lat": 26,
+        "lat": 26.5,
         "lon": -81.1
     },
 
