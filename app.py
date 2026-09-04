@@ -439,7 +439,7 @@ fig = px.scatter_map(
         "lon": -80.9
     },
 
-    zoom=6,
+    zoom=8,
 
     category_orders={
         "status": [
@@ -523,7 +523,7 @@ with enso_col:
                     SST anomaly
                 </div>
                 <div style="
-                    font-size: 32px;
+                    font-size: 36px;
                     font-weight: 600;
                     color: {anomaly_color};
                 ">
