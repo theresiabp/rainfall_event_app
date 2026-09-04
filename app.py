@@ -519,13 +519,9 @@ with enso_col:
         st.html(
             f"""
             <div style="margin-bottom: 18px;">
-                <div style="
-                    font-size: 14px;
-                    color: #555;
-                ">
+                <div style="font-size: 14px; color: #555;">
                     SST anomaly
                 </div>
-
                 <div style="
                     font-size: 32px;
                     font-weight: 600;
@@ -534,8 +530,7 @@ with enso_col:
                     {enso_anomaly:+.2f} °C
                 </div>
             </div>
-            """,
-            unsafe_allow_html=True
+            """
         )
 
         st.metric(
