@@ -469,10 +469,18 @@ fig.update_layout(
         t=0,
         b=0
     ),
+    
+    legend=dict(
+        title="Daily rainfall",
 
-    legend_title_text=(
-        "Daily rainfall"
-    ),
+        x=0.02,
+        y=0.02,
+
+        xanchor="left",
+        yanchor="bottom",
+
+        bgcolor="rgba(255,255,255,0.8)"
+    )
 
     uirevision="keep-map-position"
 )
