@@ -32,6 +32,9 @@ DATA_FILE = Path(
     "data/processed/south_florida_ghcn.parquet"
 )
 
+ENSO_FILE = Path(
+    "data/processed/nino34_daily.parquet"
+)
 
 # ============================================================
 # CHECK THAT DATA EXISTS
@@ -42,6 +45,15 @@ if not DATA_FILE.exists():
     st.error(
         "Processed rainfall data were not found.\n\n"
         "Run `python prepare_ghcn.py` first."
+    )
+
+    st.stop()
+
+if not ENSO_FILE.exists():
+
+    st.error(
+        "Processed Niño 3.4 SST data were not found.\n\n"
+        "Create `data/processed/nino34_daily.parquet` first."
     )
 
     st.stop()
@@ -60,12 +72,27 @@ def load_data():
 
     df["date"] = pd.to_datetime(
         df["date"]
+    ).dt.normalize()
+
+    return df
+
+
+@st.cache_data
+def load_enso_data():
+
+    df = pd.read_parquet(
+        ENSO_FILE
     )
+
+    df["date"] = pd.to_datetime(
+        df["date"]
+    ).dt.normalize()
 
     return df
 
 
 rain = load_data()
+enso = load_enso_data()
 
 
 # ============================================================
@@ -253,6 +280,35 @@ if day.empty:
 
     st.stop()
 
+# ============================================================
+# GET NINO 3.4 SST DATA FOR SELECTED DATE
+# ============================================================
+
+selected_date_pd = pd.Timestamp(
+    selected_date
+).normalize()
+
+enso_row = enso.loc[
+    enso["date"] == selected_date_pd
+]
+
+if not enso_row.empty:
+
+    enso_ltm = (
+        enso_row["ltm_1991_2020"]
+        .iloc[0]
+    )
+
+    enso_anomaly = (
+        enso_row["anomaly"]
+        .iloc[0]
+    )
+
+else:
+
+    enso_ltm = np.nan
+    enso_anomaly = np.nan
+
 
 # ============================================================
 # THRESHOLD EXCEEDANCE
@@ -421,6 +477,54 @@ st.plotly_chart(
     fig,
     use_container_width=True
 )
+
+# ============================================================
+# MAP + ENSO CARD
+# ============================================================
+
+map_col, enso_col = st.columns(
+    [5, 1.3],
+    gap="medium"
+)
+
+
+with map_col:
+
+    st.plotly_chart(
+        fig,
+        use_container_width=True
+    )
+
+
+with enso_col:
+
+    st.markdown(
+        "### ENSO"
+    )
+
+    st.caption(
+        "Niño 3.4"
+    )
+
+    if pd.notna(enso_anomaly):
+
+        st.metric(
+            "SST anomaly",
+            f"{enso_anomaly:+.2f} °C"
+        )
+
+        st.metric(
+            "1991–2020 LTM",
+            f"{enso_ltm:.2f} °C"
+        )
+
+    else:
+
+        st.info(
+            "Niño 3.4 SST data are unavailable "
+            "for this date."
+        )
+
 
 
 # ============================================================
