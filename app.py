@@ -472,8 +472,11 @@ fig.update_layout(
 
     legend_title_text=(
         "Daily rainfall"
-    )
+    ),
+
+    uirevision="keep-map-position"
 )
+
 
 
 # ============================================================
@@ -505,14 +508,38 @@ with enso_col:
     )
 
     if pd.notna(enso_anomaly):
+        anomaly_color = (
+            "red"
+            if enso_anomaly > 0
+            else "blue"
+            if enso_anomaly < 0
+            else "gray"
+        )
 
-        st.metric(
-            "SST anomaly",
-            f"{enso_anomaly:+.2f} °C"
+        st.markdown(
+            f"""
+            <div style="margin-bottom: 18px;">
+                <div style="
+                    font-size: 14px;
+                    color: #555;
+                ">
+                    SST anomaly
+                </div>
+
+                <div style="
+                    font-size: 32px;
+                    font-weight: 600;
+                    color: {anomaly_color};
+                ">
+                    {enso_anomaly:+.2f} °C
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
         )
 
         st.metric(
-            "1991–2020 LTM",
+            "1991–2020 Long Term Mean",
             f"{enso_ltm:.2f} °C"
         )
 
